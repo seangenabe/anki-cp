@@ -5,27 +5,13 @@ from itertools import chain
 from anki.utils import stripHTMLMedia, intTime, ids2str
 import time
 
-def copyScheduling():
+def copyScheduling(deckFrom, deckTo):
   now = intTime()
-  decks = mw.col.decks.all()
-
-  deckFromIndex = chooseList("Choose deck to copy from", chain(map(lambda deck: deck['name'], decks), ["Cancel"]))
-  if deckFromIndex == len(decks):
-    return
-  otherDecks = decks.copy()
-  otherDecks.pop(deckFromIndex)
-  deckToIndex = chooseList("Choose deck to copy to", chain(map(lambda deck: deck['name'], otherDecks), ["Cancel"]))
-  if deckToIndex == len(otherDecks):
-    return
-  
-  deckFrom = decks[deckFromIndex]
-  deckTo = otherDecks[deckToIndex]
-
   logs = []
   cids = mw.col.decks.cids(deckTo["id"], children=False)
   copiedN = 0
-  mw.checkpoint("Copy scheduling")
   updates = []
+  
   for cid in cids:
     card = mw.col.getCard(cid)
     note = mw.col.getNote(card.nid)
@@ -37,7 +23,7 @@ def copyScheduling():
     )
     
     # If there are no source cards, skip
-    if len(sourceCids) == 0:
+    if not sourceCids:
       continue
     if len(sourceCids) > 1:
       logs.append("Multiple source cards not supported. Matched field={0}".format(sfld))
@@ -95,6 +81,28 @@ def copyScheduling():
 
   showText("\n".join(logs), title="Copy scheduling log")
   mw.reset()
+
+def copyScheduling():
+  decks = mw.col.decks.all()
+
+  deckFromIndex = chooseList("Choose deck to copy from", chain(map(lambda deck: deck['name'], decks), ["Cancel"]))
+  if deckFromIndex == len(decks):
+    return
+  otherDecks = decks.copy()
+  otherDecks.pop(deckFromIndex)
+  deckToIndex = chooseList("Choose deck to copy to", chain(map(lambda deck: deck['name'], otherDecks), ["Cancel"]))
+  if deckToIndex == len(otherDecks):
+    return
+  
+  deckFrom = decks[deckFromIndex]
+  deckTo = otherDecks[deckToIndex]
+
+  mw.checkpoint("Copy scheduling")
+  try:
+    copyScheduling(deckFrom, deckTo)
+  except:
+    mw.col.db.rollback()
+    raise
 
 action = QAction("Copy Scheduling", mw)
 action.triggered.connect(copyScheduling)
