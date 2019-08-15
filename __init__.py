@@ -11,6 +11,7 @@ def copyScheduling(deckFrom, deckTo):
   cids = mw.col.decks.cids(deckTo["id"], children=False)
   copiedN = 0
   updates = []
+  revlogid = int(time.time() * 1000)
   
   for cid in cids:
     card = mw.col.getCard(cid)
@@ -54,7 +55,7 @@ def copyScheduling(deckFrom, deckTo):
         "select :id, :newcid, :usn, r.ease, r.ivl, r.lastIvl, r.factor, r.time, r.type "
         "from revlog as r "
         "where cid=:oldcid",
-        id=int(time.time() * 1000),
+        id=revlogid,
         oldcid=sourceCid,
         newcid=cid,
         usn=mw.col.usn()
@@ -64,7 +65,8 @@ def copyScheduling(deckFrom, deckTo):
     except:
       time.sleep(0.01)
       copyRevlog()
-
+    
+    revlogid += 1
     copiedN += 1
 
   #logs.append("updates {0}".format(updates))
