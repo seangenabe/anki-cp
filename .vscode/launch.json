@@ -11,8 +11,11 @@
             "program": "anki",
             "cwd": "${workspaceRoot}",
             "args": [
-                //"-b", "files/profile"
-            ]
+                "-b", "files/profile"
+            ],
+            "windows": {
+                "program": "${workspaceRoot}/anki/runanki"
+            }
         }
     ]
 }
