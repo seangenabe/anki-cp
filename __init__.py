@@ -5,7 +5,7 @@ from itertools import chain
 from anki.utils import stripHTMLMedia, intTime, ids2str
 import time
 
-def copyScheduling(deckFrom, deckTo):
+def _copyScheduling(deckFrom, deckTo):
   now = intTime()
   logs = []
   cids = mw.col.decks.cids(deckTo["id"], children=False)
@@ -102,7 +102,7 @@ def copyScheduling():
 
   mw.checkpoint("Copy scheduling")
   try:
-    copyScheduling(deckFrom, deckTo)
+    _copyScheduling(deckFrom, deckTo)
   except:
     mw.col.db.rollback()
     raise
