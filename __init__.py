@@ -60,13 +60,14 @@ def copyScheduling(deckFrom, deckTo):
         newcid=cid,
         usn=mw.col.usn()
       )
-    try:
-      copyRevlog()
-    except:
-      time.sleep(0.01)
-      copyRevlog()
+    for _ in range(0, 5):
+      try:
+        copyRevlog()
+        break
+      finally:
+        revlogid += 1
+    copyRevlog()
     
-    revlogid += 1
     copiedN += 1
 
   #logs.append("updates {0}".format(updates))
