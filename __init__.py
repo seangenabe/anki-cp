@@ -4,6 +4,9 @@ from aqt.qt import *
 from itertools import chain
 from anki.utils import stripHTMLMedia, intTime, ids2str
 import time
+import sys
+
+MAX_RETRIES = 6
 
 def _copyScheduling(deckFrom, deckTo):
     now = intTime()
@@ -11,7 +14,6 @@ def _copyScheduling(deckFrom, deckTo):
     cids = mw.col.decks.cids(deckTo["id"], children=False)
     copiedN = 0
     updates = []
-    revlogid = int(time.time() * 1000)
     
     for cid in cids:
         card = mw.col.getCard(cid)
@@ -49,27 +51,25 @@ def _copyScheduling(deckFrom, deckTo):
             usn=mw.col.usn()
         ))
 
-        def copyRevlog():
+        def copyRevlog(offset):
             mw.col.db.execute(
                 "insert into revlog "
-                "select :id, :newcid, :usn, r.ease, r.ivl, r.lastIvl, r.factor, r.time, r.type "
+                "select r.id + :offset, :newcid, :usn, r.ease, r.ivl, r.lastIvl, r.factor, r.time, r.type "
                 "from revlog as r "
                 "where cid=:oldcid",
-                id=revlogid,
+                offset=offset,
                 oldcid=sourceCid,
                 newcid=cid,
                 usn=mw.col.usn()
             )
-        for _ in range(0, 5):
+        for i in range(0, MAX_RETRIES + 1):
             try:
-                copyRevlog()
+                copyRevlog(2 << i)
                 break
             except:
-                continue
-            finally:
-                revlogid += 1
-        copyRevlog()
-        
+                if i == MAX_RETRIES:
+                    raise
+
         copiedN += 1
 
     #logs.append("updates {0}".format(updates))
